@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import DefaultDict, Tuple, Dict, List, Set
 
 def process_chunk(chunk_start: int, chunk_size: int, return_dict: multiprocessing.managers.DictProxy) -> None:
-    with open("measurements.txt", "r+b") as file:
+    with open("../1brc/measurements.txt", "r+b") as file:
         mm = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
         chunk_end = chunk_start + chunk_size
 
