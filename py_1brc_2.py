@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import DefaultDict, Tuple, Dict, List, Set
 
 def process_chunk(chunk_start: int, chunk_size: int, return_dict: multiprocessing.managers.DictProxy) -> None:
-    with open("../1brc/measurements.txt", "r+b") as file:
+    with open("measurements.txt", "r+b") as file:
         mm = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
         chunk_end = chunk_start + chunk_size
 
@@ -25,7 +25,7 @@ def process_chunk(chunk_start: int, chunk_size: int, return_dict: multiprocessin
             station_data[station_name][3] += 1  # Count
 
         for station, data in station_data.items():
-            return_dict[station] = (data[0], data[2] / data[3], data[1])
+            return_dict[station] = (data[0], data[1], data[2], data[3])
             # if station in return_dict:
             #     existing_data = return_dict[station]
             #     return_dict[station] = (
@@ -53,22 +53,24 @@ def main() -> None:
     for p in processes:
         p.join()
 
-    shared_results: Dict[str, Tuple[float, float, float]] = manager.dict()
+    shared_results: Dict[str, Tuple[float, float, float, float]] = manager.dict()
     for return_dict in ret_dicts:
         for station, data in return_dict.items():
             if station in shared_results:
                 existing_data = shared_results[station]
                 shared_results[station] = (
                     min(existing_data[0], data[0]),
-                    (existing_data[1] + data[1]) / 2,
-                    max(existing_data[2], data[2])
+                    max(existing_data[1], data[1])
+                    (existing_data[2] + data[2]),
+                    (existing_data[3] + data[3])                   
                 )
             else:
                 shared_results[station] = data
 
     sorted_stations: Set[str] = sorted(shared_results.keys())
     for station in sorted_stations:
-        min_temp, mean_temp, max_temp = shared_results[station]
+        min_temp, max_temp, total_temp,count = shared_results[station]
+        mean_temp = total_temp / count
         print(f"{station};{min_temp:.1f}/{mean_temp:.1f}/{max_temp:.1f}")
 
 if __name__ == "__main__":
