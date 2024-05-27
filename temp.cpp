@@ -50,6 +50,8 @@ extern "C" {
             int thread_id = omp_get_thread_num();
             size_t start = thread_id * chunk_size;
             size_t end = (thread_id == omp_get_num_threads() - 1) ? file_size : (thread_id + 1) * chunk_size;
+            printf("Before Thread id %d start %lu end %lu\n", thread_id, start, end);
+            fflush(stdout);
             if (start != 0) {
                 while (start < file_size && file_content[start - 1] != '\n') {
                     start++;
@@ -61,6 +63,8 @@ extern "C" {
                 }
                 end++;
             }
+            printf("After Thread id %d start %lu end %lu\n", thread_id, start, end);
+            fflush(stdout);
             for (size_t i = start; i < end; i++) {
                 if (file_content[i] == '\n' || i == end - 1) {
                     size_t line_start = i;
@@ -104,6 +108,7 @@ extern "C" {
         }
         munmap(file_content, file_size);
         std::vector<CityTemperature> city_array;
+        city_array.reserve(cities.size());
         for (const auto& pair : cities) {
             city_array.push_back(pair.second);
         }

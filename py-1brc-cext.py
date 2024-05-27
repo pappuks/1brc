@@ -1,7 +1,7 @@
 import ctypes
 
 # Load the shared library
-lib = ctypes.CDLL('./libtemperatures.dylib')
+lib = ctypes.CDLL('./libcitytemp.so')
 
 # Define the argument and return types of the C function
 lib.process_file.argtypes = [ctypes.c_char_p]
