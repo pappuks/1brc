@@ -8,5 +8,5 @@ lib.process_file.argtypes = [ctypes.c_char_p]
 lib.process_file.restype = None
 
 # Call the C function
-filename = "../1brc/measurements.txt"
+filename = "./measurements_100mil.txt"
 lib.process_file(filename.encode('utf-8'))

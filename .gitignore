@@ -3,3 +3,5 @@ build/
 measurements.txt
 vevn/
 .mypy_cache/
+measurements_100mil.txt
+a.out
