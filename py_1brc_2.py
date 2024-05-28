@@ -4,7 +4,9 @@ import mmap
 import multiprocessing
 from collections import defaultdict
 from typing import DefaultDict, Tuple, Dict, List, Set
+import line_profiler
 
+@line_profiler.profile
 def process_chunk(chunk_start: int, chunk_size: int, return_dict: multiprocessing.managers.DictProxy) -> None:
     with open("measurements_100mil.txt", "r+b") as file:
         mm = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
@@ -50,6 +52,7 @@ def process_chunk(chunk_start: int, chunk_size: int, return_dict: multiprocessin
             # else:
             #     return_dict[station] = (data[0], data[2] / data[3], data[1])
 
+@line_profiler.profile
 def main() -> None:
     num_processes = os.cpu_count() or 1
     # file_path = "measurements.txt"

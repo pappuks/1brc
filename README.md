@@ -10,5 +10,7 @@ C -  https://github.com/dannyvankooten/1brc
 
 Python - https://github.com/ifnesi/1brc
 
+https://kernprof.readthedocs.io/en/latest/#line-profiler-basic-usage
+
 
 
