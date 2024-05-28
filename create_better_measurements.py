@@ -480,7 +480,7 @@ if __name__ == "__main__":
         dest="output",
         type=str,
         help=f"Measurement file name (Default is measurements.txt)",
-        default="measurements.txt",
+        default="measurements_1mil.txt",
     )
     parser.add_argument(
         "-r",
@@ -488,7 +488,7 @@ if __name__ == "__main__":
         help=f"Number of records to create (Default is 1000000000)",
         dest="records",
         type=min_records,
-        default=1000000000,
+        default=1000000,
     )
 
     args = parser.parse_args()
