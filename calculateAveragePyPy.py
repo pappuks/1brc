@@ -1,4 +1,4 @@
-# time python3 calculateAverage.py
+# time pypy3 calculateAveragePypy.py
 import os
 import multiprocessing as mp
 
@@ -58,32 +58,63 @@ def _process_file_chunk(
     file_name: str,
     chunk_start: int,
     chunk_end: int,
+    blocksize: int = 1024 * 1024,
 ) -> dict:
     """Process each file chunk in a different process"""
     result = dict()
-    with open(file_name, "rb") as f:
-        f.seek(chunk_start)
-        for line in f:
-            chunk_start += len(line)
-            if chunk_start > chunk_end:
-                break
-            location, measurement = line.split(b";")
-            measurement = float(measurement)
-            if location not in result:
-                result[location] = [
-                    measurement,
-                    measurement,
-                    measurement,
-                    1,
-                ]  # min, max, sum, count
-            else:
-                _result = result[location]
-                if measurement < _result[0]:
-                    _result[0] = measurement
-                if measurement > _result[1]:
-                    _result[1] = measurement
-                _result[2] += measurement
-                _result[3] += 1
+
+    with open(file_name, "r+b") as fh:
+        fh.seek(chunk_start)
+
+        tail = b""
+        location = None
+        byte_count = chunk_end - chunk_start
+
+        while byte_count > 0:
+            if blocksize > byte_count:
+                blocksize = byte_count
+            byte_count -= blocksize
+
+            index = 0
+            data = tail + fh.read(blocksize)
+            while data:
+                if location is None:
+                    try:
+                        semicolon = data.index(b";", index)
+                    except ValueError:
+                        tail = data[index:]
+                        break
+
+                    location = data[index:semicolon]
+                    index = semicolon + 1
+
+                try:
+                    newline = data.index(b"\n", index)
+                except ValueError:
+                    tail = data[index:]
+                    break
+
+                value = float(data[index:newline])
+                index = newline + 1
+
+                if location not in result:
+                    result[location] = [
+                        value,
+                        value,
+                        value,
+                        1,
+                    ]  # min, max, sum, count
+                else:
+                    _result = result[location]
+                    if value < _result[0]:
+                        _result[0] = value
+                    if value > _result[1]:
+                        _result[1] = value
+                    _result[2] += value
+                    _result[3] += 1
+
+                location = None
+
     return result
 
 
@@ -118,7 +149,7 @@ def process_file(
     print("{", end="")
     for location, measurements in sorted(result.items()):
         print(
-            f"{location.decode('utf8')}={measurements[0]:.1f}/{(measurements[2] / measurements[3]) if measurements[3] !=0 else 0:.1f}/{measurements[1]:.1f}",
+            f"{location.decode('utf-8')}={measurements[0]:.1f}/{(measurements[2] / measurements[3]) if measurements[3] !=0 else 0:.1f}/{measurements[1]:.1f}",
             end=", ",
         )
     print("\b\b} ")

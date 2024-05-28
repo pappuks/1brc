@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import DefaultDict, Tuple, Dict, List, Set
 
 def process_chunk(chunk_start: int, chunk_size: int, return_dict: multiprocessing.managers.DictProxy) -> None:
-    with open("measurements.txt", "r+b") as file:
+    with open("measurements_100mil.txt", "r+b") as file:
         mm = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
         chunk_end = chunk_start + chunk_size
 
@@ -54,13 +54,13 @@ def main() -> None:
     num_processes = os.cpu_count() or 1
     # file_path = "measurements.txt"
     # total_lines = count_lines(file_path)
-    chunk_size = 1000000000 // num_processes
+    chunk_size = 100000000 // num_processes
     #chunk_size = 100_000_000  # 1 million rows per chunk
     manager = multiprocessing.Manager()
     processes: List[multiprocessing.Process] = []
     ret_dicts : List[multiprocessing.managers.DictProxy] = []
 
-    for i in range(0, 1000000000, chunk_size):
+    for i in range(0, 100000000, chunk_size):
         return_dict = manager.dict()
         ret_dicts.append(return_dict)
         p = multiprocessing.Process(target=process_chunk, args=(i, chunk_size, return_dict))

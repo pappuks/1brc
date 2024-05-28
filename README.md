@@ -6,7 +6,9 @@ brew install llvm
 
 /opt/homebrew/opt/llvm/bin/clang++ -fPIC -shared -o libcitytemp.so temp.cpp -fopenmp
 
-https://github.com/dannyvankooten/1brc
+C -  https://github.com/dannyvankooten/1brc
+
+Python - https://github.com/ifnesi/1brc
 
 
 
