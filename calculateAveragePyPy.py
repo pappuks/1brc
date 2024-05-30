@@ -156,5 +156,5 @@ def process_file(
 
 
 if __name__ == "__main__":
-    cpu_count, *start_end = get_file_chunks("measurements_100mil.txt")
+    cpu_count, *start_end = get_file_chunks("../1brc/measurements.txt")
     process_file(cpu_count, start_end[0])

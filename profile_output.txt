@@ -1,58 +1,58 @@
 Timer unit: 1e-09 s
 
-Total time: 36.4588 s
-File: /Users/kuldeepsingh/Work/github/1brc/py_1brc_2.py
-Function: main at line 55
+Total time: 1.50583 s
+File: /Users/kuldeepsingh/Work/github/1brc-pappu/py_1brc_2.py
+Function: process_chunk at line 12
 
 Line #      Hits         Time  Per Hit   % Time  Line Contents
 ==============================================================
-    55                                           @line_profiler.profile
-    56                                           def main() -> None:
-    57         1      15000.0  15000.0      0.0      num_processes = os.cpu_count() or 1
-    58                                               # file_path = "measurements.txt"
-    59                                               # total_lines = count_lines(file_path)
-    60         1       4000.0   4000.0      0.0      chunk_size = 100000000 // num_processes
-    61                                               #chunk_size = 100_000_000  # 1 million rows per chunk
-    62         1   61656000.0    6e+07      0.2      manager = multiprocessing.Manager()
-    63         1       1000.0   1000.0      0.0      processes: List[multiprocessing.Process] = []
-    64         1          0.0      0.0      0.0      ret_dicts : List[multiprocessing.managers.DictProxy] = []
-    65                                           
-    66        14      36000.0   2571.4      0.0      for i in range(0, 100000000, chunk_size):
-    67        13   21630000.0    2e+06      0.1          return_dict = manager.dict()
-    68        13      33000.0   2538.5      0.0          ret_dicts.append(return_dict)
-    69        13     329000.0  25307.7      0.0          p = multiprocessing.Process(target=process_chunk, args=(i, chunk_size, return_dict))
-    70        13       6000.0    461.5      0.0          processes.append(p)
-    71        13   12904000.0 992615.4      0.0          p.start()
-    72                                           
-    73        14       4000.0    285.7      0.0      for p in processes:
-    74        13        4e+10    3e+09     99.7          p.join()
-    75                                           
-    76         1       9000.0   9000.0      0.0      shared_results = dict()
-    77        14      26000.0   1857.1      0.0      for return_dict in ret_dicts:
-    78      5382    3973000.0    738.2      0.0          for station, data in return_dict.items():
-    79      5369     742000.0    138.2      0.0              if station in shared_results:
-    80      4956     630000.0    127.1      0.0                  _result = shared_results[station]
-    81      4956     698000.0    140.8      0.0                  if data[0] < _result[0]:
-    82                                                               _result[0] = data[0]
-    83      4956     609000.0    122.9      0.0                  if data[1] > _result[1]:
-    84                                                               _result[1] = data[1]
-    85      4956     836000.0    168.7      0.0                  _result[2] += data[2]
-    86      4956     858000.0    173.1      0.0                  _result[3] += data[3]
-    87                                                       else:
-    88       413      47000.0    113.8      0.0                  shared_results[station] = data
-    89                                           
-    90                                               # sorted_stations: Set[str] = sorted(shared_results.keys())
-    91                                               # for station in sorted_stations:
-    92                                               #     min_temp, max_temp, total_temp,count = shared_results[station]
-    93                                               #     mean_temp = total_temp / count
-    94                                               #     print(f"{station};{min_temp:.1f}/{mean_temp:.1f}/{max_temp:.1f}")
-    95                                           
-    96         1       8000.0   8000.0      0.0      print("{", end="")
-    97       414     140000.0    338.2      0.0      for location, measurements in sorted(shared_results.items()):
-    98       826     186000.0    225.2      0.0          print(
-    99       413     353000.0    854.7      0.0              f"{location.decode('utf8')}={measurements[0]:.1f}/{(measurements[2] / measurements[3]) if measurements[3] !=0 else 0:.1f}/{measurements[1]:.1f}",
-   100       413      36000.0     87.2      0.0              end=", ",
-   101                                                   )
-   102         1     221000.0 221000.0      0.0      print("\b\b} ")
+    12                                           @line_profiler.profile
+    13                                           #def process_chunk(chunk_start: int, chunk_size: int, return_dict: multiprocessing.managers.DictProxy) -> None:
+    14                                           def process_chunk(chunk_start: int, chunk_size) -> dict:
+    15         2      43000.0  21500.0      0.0      with open(file_path, "r+b") as file:
+    16         1    3666000.0    4e+06      0.2          mm = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
+    17         1          0.0      0.0      0.0          chunk_end = chunk_start + chunk_size
+    18                                           
+    19                                                   #station_data: DefaultDict[str, List[float]] = defaultdict(lambda: [200.0, -200.0, 0.0, 0])
+    20                                           
+    21         1       9000.0   9000.0      0.0          result = dict()
+    22                                           
+    23   1000001  212818000.0    212.8     14.1          for i, line in enumerate(iter(mm.readline, b""), chunk_start):
+    24   1000000  112410000.0    112.4      7.5              if i >= chunk_end:
+    25                                                           break
+    26                                           
+    27   1000000  205995000.0    206.0     13.7              location, temp_str = line.split(b";")
+    28   1000000  135838000.0    135.8      9.0              measurement = float(temp_str)
+    29                                           
+    30   1000000  138595000.0    138.6      9.2              if location not in result:
+    31       413      62000.0    150.1      0.0                  result[location] = [
+    32       413      33000.0     79.9      0.0                      measurement,
+    33       413      34000.0     82.3      0.0                      measurement,
+    34       413      35000.0     84.7      0.0                      measurement,
+    35       413      23000.0     55.7      0.0                      1,
+    36                                                           ]  # min, max, sum, count
+    37                                                       else:
+    38    999587  116873000.0    116.9      7.8                  _result = result[location]
+    39    999587  110167000.0    110.2      7.3                  if measurement < _result[0]:
+    40      3017     287000.0     95.1      0.0                      _result[0] = measurement
+    41    999587  135082000.0    135.1      9.0                  if measurement > _result[1]:
+    42      2966     273000.0     92.0      0.0                      _result[1] = measurement
+    43    999587  173177000.0    173.2     11.5                  _result[2] += measurement
+    44    999587  160411000.0    160.5     10.7                  _result[3] += 1
+    45                                           
+    46         1          0.0      0.0      0.0          return result
+    47                                           
+    48                                           
+    49                                                   # for station, data in result.items():
+    50                                                   #     return_dict[station] = data
+    51                                                       # if station in return_dict:
+    52                                                       #     existing_data = return_dict[station]
+    53                                                       #     return_dict[station] = (
+    54                                                       #         min(existing_data[0], data[0]),
+    55                                                       #         (existing_data[2] + data[2]) / (existing_data[3] + data[3]),
+    56                                                       #         max(existing_data[1], data[1])
+    57                                                       #     )
+    58                                                       # else:
+    59                                                       #     return_dict[station] = (data[0], data[2] / data[3], data[1])
 
- 36.46 seconds - /Users/kuldeepsingh/Work/github/1brc/py_1brc_2.py:55 - main
+  1.51 seconds - /Users/kuldeepsingh/Work/github/1brc-pappu/py_1brc_2.py:12 - process_chunk
