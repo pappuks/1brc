@@ -194,7 +194,7 @@ void result_to_str(char *dest, const struct Result *result) {
 }
 
 int main(int argc, char **argv) {
-  char *file = "measurements.txt";
+  char *file = "../1brc/measurements.txt";
   if (argc > 1) {
     file = argv[1];
   }

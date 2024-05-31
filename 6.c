@@ -178,7 +178,7 @@ static void *process_chunk(void *arg) {
 }
 
 int main(int argc, const char **argv) {
-  const char *file = "measurements.txt";
+  const char *file = "../1brc/measurements.txt";
   if (argc > 1) {
     file = argv[1];
   }
