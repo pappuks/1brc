@@ -1,6 +1,6 @@
 # 1BRC in Python
 
-I am a sucker for optimization. So when I heard about 1BRC I naturally got intrigured. I achieved my goal and implemented the fastest implementation running on CPython, without any external libraries.
+I am a sucker for optimization. So when I heard about [1BRC](https://www.morling.dev/blog/one-billion-row-challenge/) I got intrigured and started experimenting with python implementations. **I achieved my goal and implemented the [fastest implementation](./py_1brc_final.py) running on CPython, without any external libraries .**
 
 I set out to fulfill the challange using few principles:
 
@@ -12,11 +12,15 @@ I set out to fulfill the challange using few principles:
 - Don't use SIMD or Vector instructions
     - Keep the code portable and maintainable. SIMD instructions can be super performant and allow for taking full advantage of the processor without relying on compiler optimization, but they are not easy to maintain and the code will need to be re-written when changing processor architecture.
 - Use profiler
-    - My aim was to use python profiler to optimize the code as much as possible and to also learn how to profile python code 
+    - My aim was to use python profiler to optimize the code as much as possible 
 - Use GPT for code generation
-    - I wanted to generate most of the code using GPT, so that it helps me jump start my implementation
+    - I wanted to generate most of the code using GPT to help me jumpstart my implementation
 - Take inspiration from existing python attempts
     - I wanted to look existing attempts of 1BRC in python and take inspiration from them and then build my optimizations on top of them
+    - Credits:
+        - https://github.com/ifnesi/1brc
+        - https://github.com/dannyvankooten/1brc
+
 
 ## Performance (Macbook Pro M2 Pro 32GB RAM) (1 Billion Rows)
 
@@ -24,7 +28,7 @@ I set out to fulfill the challange using few principles:
 
 | Interpreter | File | Time (sec)|
 |-------------|------|-----------|
-| Python3 | py_1brc_final.py | 26.518 |
+| Python3 | py_1brc_final.py | 24.882 |
 | Python3 | py_1brc_mypyc.py (process_chunk.py precompiled using mypyc) | 24.441 |
 | Python3 | calculateAverage.py (from https://github.com/ifnesi/1brc) | 36.303 |
 | Python3 | calculateAveragePyPy.py (from https://github.com/ifnesi/1brc) | 60.60 |
@@ -68,35 +72,37 @@ I set out to fulfill the challange using few principles:
         - The memory mapped file was being mapped for full file size by all child processes, which led to very in-efficient read performance
         - Data was shared between processes using `multiprocessing.managers.DictProxy` which was very in-efficient, as it would syncronize access to the dictionary, which was not really needed.
         - The access pattern to read and store data in dictionary was very sub-optimal
-        ``` 
-            combined_data[city]['sum'] += data['sum']
-            combined_data[city]['count'] += data['count']
-            combined_data[city]['min'] = min(combined_data[city]['min'], data['min'])
-            combined_data[city]['max'] = max(combined_data[city]['max'], data['max'])
-        ```
-
-        - Instead the below code is more optimal (inspired by https://github.com/ifnesi/1brc):
-
-        ```
-            city_info = combined_data[city]
-            city_info['sum'] += data['sum']
-            city_info['count'] += data['count']
-            if city_info['min'] > data['min']
-                city_info['min'] = data['min']
-            if city_info['max'] < data['max']
-                city_info['max'] = data['max']
-        ``` 
+            ``` 
+                combined_data[city]['sum'] += data['sum']
+                combined_data[city]['count'] += data['count']
+                combined_data[city]['min'] = min(combined_data[city]['min'], data['min'])
+                combined_data[city]['max'] = max(combined_data[city]['max'], data['max'])
+            ```
+    - Using profiler (line_profiler) I was able to identify and fix performance at multiple places.
+        - For sharing data between main and child processes it is more optimal to use `Pool.starmap` or `Pool.map` 
+        - Below code is more optimal when updating dictionary elements (inspired by https://github.com/ifnesi/1brc):
+            ```
+                city_info = combined_data[city]
+                city_info['sum'] += data['sum']
+                city_info['count'] += data['count']
+                if city_info['min'] > data['min']
+                    city_info['min'] = data['min']
+                if city_info['max'] < data['max']
+                    city_info['max'] = data['max']
+            ``` 
+        - Type annotations improve readability and performance.
+        - Removed few `if` checks which were redundant.
 
 ## Learnings
 
 - Python Multiprocessing is very powerful in enabling multi core processing. 
-    - Using `Pool.startmap` to execute tasks in independent proceses is a very effective way to parallelizing work. 
+    - Using `Pool.starmap` to execute tasks in independent proceses is a very effective way to parallelizing work. 
     - Using `multiprocessing.managers.DictProxy` to transfer data between processes can be very slow as the runtime syncronizes access to the dictionary.
 - Code generated by GPT is most likely going to be sub-optimal and you need to spend time in optimizing the code by understanding the core logic.
 - In low memory situations using memory mapped files is going to be most performant as compared to direct file access.
     - When using memory mapped file do not access the same chunks in random patten in different processes, instead mount the memory mapped file with required length and offset in each process/thread.
-- PyPy gives good boost over CPython but compatibility of PyPy with external libraries is a limiting factor
-- MyPyC optimizations do yield results where you can shave off 2-5 seconds of execution time 
+- PyPy gives good boost over CPython but compatibility of PyPy with external libraries is a limiting factor.
+- MyPyC optimizations might not always give the performance boost you expect. So always measure after making the change.
 - The method of reading the 13GB measurement file (with 1 billion records) has a large impact on the performance of the program
     - When there is memory pressure then memory mapping the file gives best reasults
     - When the file is already precached in memory then using the default file operations yields best performance
@@ -104,3 +110,30 @@ I set out to fulfill the challange using few principles:
 - Same applies to the choice of data structure for storing the values, as you will be doing lookup in the map/dictionary/hashtable a billion times.
 - The order of reading data from the file will have impact on performance, so optimize for that. Random access will hurt performance, so when reading in multiple threads ensure that each thread is reading contiguous portions of the file sequentially. 
     - The [identify_chunks](./py_1brc_final.py#L69) method identifies portions of the file which we can read by individual threads 
+- Some optimizations which did not work
+    - [Custom integer parsing](https://github.com/dougmercer-yt/1brc/blob/main/src/community/doug_booty4_no_gc.py#L26) (as shown below ) was slower than just casing the byte values to float
+        ```
+        def to_int(x: bytes) -> int:
+            # Parse sign
+            if x[0] == 45:  # ASCII for "-"
+                sign = -1
+                idx = 1
+            else:
+                sign = 1
+                idx = 0
+            # Check the position of the decimal point
+            if x[idx + 1] == 46:  # ASCII for "."
+                # -#.# or #.#
+                # 528 == ord("0") * 11
+                result = sign * ((x[idx] * 10 + x[idx + 2]) - 528)
+            else:
+                # -##.# or ##.#
+                # 5328 == ord("0") * 111
+                result = sign * ((x[idx] * 100 + x[idx + 1] * 10 + x[idx + 3]) - 5328)
+
+            return result
+        ```
+    - Mypyc compilation was not any faster than default cpython implementation
+    - Using a custom data class [City](./py_1brc_final.py#L8) did not improvem performance over a `List[float]`
+
+

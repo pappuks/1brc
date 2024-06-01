@@ -2,9 +2,18 @@ import multiprocessing
 import os
 import mmap
 from typing import List, Dict, Tuple
+from dataclasses import dataclass
+
+@dataclass
+class City:
+    min : float
+    max : float
+    sum : float
+    count : int
 
 # Path to the file containing measurements
 file_path = "../1brc/measurements.txt"
+
 def is_new_line(position: int, mm: mmap.mmap) -> bool:
     """
     Check if the given position in the memory-mapped file is the start of a new line.
@@ -33,14 +42,14 @@ def next_line(position: int, mm: mmap.mmap) -> int:
     mm.readline()
     return mm.tell()
 
-def process_chunk(chunk_start: int, chunk_end: int) -> Dict[bytes, List[float]]:
+def process_chunk(chunk_start: int, chunk_end: int) -> Dict[bytes, City]:
     """
     Process a chunk of the file and compute min, max, sum, and count of measurements for each location.
     Args:
         chunk_start (int): The start position of the chunk.
         chunk_end (int): The end position of the chunk.
     Returns:
-        Dict[bytes, List[float]]: A dictionary with location as key and a list of min, max, sum, and count as value.
+        Dict[bytes, City]: A dictionary with location as key and a City class with min, max, sum, and count as value.
     """
     chunk_size = chunk_end - chunk_start
     print("Start:", chunk_start, " End:", chunk_end)
@@ -48,20 +57,20 @@ def process_chunk(chunk_start: int, chunk_end: int) -> Dict[bytes, List[float]]:
         mm = mmap.mmap(file.fileno(), length=chunk_size, access=mmap.ACCESS_READ, offset=chunk_start)
         if chunk_start != 0:
             next_line(0, mm)
-        result = dict()
+        result : Dict[bytes, City] = dict()
         for line in iter(mm.readline, b""):
             location, temp_str = line.split(b";")
             measurement = float(temp_str)
             if location not in result:
-                result[location] = [measurement, measurement, measurement, 1]  # min, max, sum, count
+                result[location] = City(measurement, measurement, measurement, 1)  # min, max, sum, count
             else:
                 _result = result[location]
-                if measurement < _result[0]:
-                    _result[0] = measurement
-                if measurement > _result[1]:
-                    _result[1] = measurement
-                _result[2] += measurement
-                _result[3] += 1
+                if measurement < _result.min:
+                    _result.min = measurement
+                if measurement > _result.max:
+                    _result.max = measurement
+                _result.sum += measurement
+                _result.count += 1
         mm.close()
         return result
     
@@ -102,23 +111,24 @@ def perform_op() -> None:
     chunk_results = identify_chunks(num_processes)
     with multiprocessing.Pool(num_processes) as pool:
         ret_dicts = pool.starmap(process_chunk, chunk_results)
-    shared_results : Dict[bytes, List[float]] = dict()
+    shared_results : Dict[bytes, City] = dict()
     for return_dict in ret_dicts:
         for station, data in return_dict.items():
             if station in shared_results:
                 _result = shared_results[station]
-                if data[0] < _result[0]:
-                    _result[0] = data[0]
-                if data[1] > _result[1]:
-                    _result[1] = data[1]
-                _result[2] += data[2]
-                _result[3] += data[3]
+                _result = shared_results[station]
+                if data.min < _result.min:
+                    _result.min = data.min
+                if data.max > _result.max:
+                    _result.max = data.max
+                _result.sum += data.sum
+                _result.count += data.count
             else:
                 shared_results[station] = data
     print("{", end="")
     for location, measurements in sorted(shared_results.items()):
         print(
-            f"{location.decode('utf8')}={measurements[0]:.1f}/{(measurements[2] / measurements[3]) if measurements[3] != 0 else 0:.1f}/{measurements[1]:.1f}",
+            f"{location.decode('utf8')}={measurements.min:.1f}/{(measurements.sum / measurements.count) if measurements.count != 0 else 0:.1f}/{measurements.max:.1f}",
             end=", ",
         )
     print("\b\b} ")
