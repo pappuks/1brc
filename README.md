@@ -16,6 +16,37 @@ I am a sucker for optimization. So when I heard about 1BRC I naturally got intri
 - Take inspiration from existing python attempts
     - I wanted to look existing attempts of 1BRC in python and take inspiration from them and then build my optimizations on top of them
 
+## Execution
+
+- I started by asking GPT to generate python code using below prompt:
+    > For a file with 1 billion rows which has each row having a city name and the corresponding temperature, where the city temperature can be repeated multiple times. Provide a python code which prints the min, mean and max temperature for each city in alphabetical fashion. Make the code most optimal without any dependency on external libraries.
+
+    - As you can realize the above prompt missed providing details of the file format, optimizing for speed and not memory and giving any direction for multi-processing. After providing all those imputs in subsequent prompts. 
+    - GPT kept on going towards providing solutions using `numpy` and `pandas` and I had to reinforce in subsequent prompts to not rely on third party libraries
+    - At the end I got a code which spawned multiple processes and read the file using memory mapping. The code even though functional, but was far from being optimized. Main issues were:
+        - The memory mapped file was being mapped for full file size by all child processes, which led to very in-efficient read performance
+        - Data was shared between processes using `multiprocessing.managers.DictProxy` which was very in-efficient, as it would syncronize access to the dictionary, which was not really needed.
+        - The access pattern to read and store data in dictionary was very sub-optimal
+        ``` 
+            combined_data[city]['sum'] += data['sum']
+            combined_data[city]['count'] += data['count']
+            combined_data[city]['min'] = min(combined_data[city]['min'], data['min'])
+            combined_data[city]['max'] = max(combined_data[city]['max'], data['max'])
+        ```
+
+        - Instead the below code is more optimal (inspired by https://github.com/ifnesi/1brc):
+
+        ```
+            city_info = combined_data[city]
+            city_info['sum'] += data['sum']
+            city_info['count'] += data['count']
+            if city_info['min'] > data['min']
+                city_info['min'] = data['min']
+            if city_info['max'] < data['max']
+                city_info['max'] = data['max']
+        ``` 
+
+
 
 ## Learnings
 
@@ -33,4 +64,4 @@ I am a sucker for optimization. So when I heard about 1BRC I naturally got intri
 - Strategies of reading and parsing each of the lines, identifying the semi colon, casting to float are the operations which you will perform 1 billion times, so effectively doing them will have good impact on the program execution.
 - Same applies to the choice of data structure for storing the values, as you will be doing lookup in the map/dictionary/hashtable a billion times.
 - The order of reading data from the file will have impact on performance, so optimize for that. Random access will hurt performance, so when reading in multiple threads ensure that each thread is reading contiguous portions of the file sequentially. 
-    - The `identify_chunks` method identifies portions of the file which we can read by individual threads 
+    - The [identify_chunks](./py_1brc_final.py#L69) method identifies portions of the file which we can read by individual threads 
