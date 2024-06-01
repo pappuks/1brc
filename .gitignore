@@ -6,3 +6,5 @@ vevn/
 measurements_100mil.txt
 a.out
 profile_output*
+*darwin.so
+__pycache__/
