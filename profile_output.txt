@@ -1,58 +1,44 @@
 Timer unit: 1e-09 s
 
-Total time: 1.50583 s
-File: /Users/kuldeepsingh/Work/github/1brc-pappu/py_1brc_2.py
-Function: process_chunk at line 12
+Total time: 1.35449 s
+File: /Users/kuldeepsingh/Work/github/1brc/py_1brc_final.py
+Function: process_chunk at line 36
 
 Line #      Hits         Time  Per Hit   % Time  Line Contents
 ==============================================================
-    12                                           @line_profiler.profile
-    13                                           #def process_chunk(chunk_start: int, chunk_size: int, return_dict: multiprocessing.managers.DictProxy) -> None:
-    14                                           def process_chunk(chunk_start: int, chunk_size) -> dict:
-    15         2      43000.0  21500.0      0.0      with open(file_path, "r+b") as file:
-    16         1    3666000.0    4e+06      0.2          mm = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
-    17         1          0.0      0.0      0.0          chunk_end = chunk_start + chunk_size
-    18                                           
-    19                                                   #station_data: DefaultDict[str, List[float]] = defaultdict(lambda: [200.0, -200.0, 0.0, 0])
-    20                                           
-    21         1       9000.0   9000.0      0.0          result = dict()
-    22                                           
-    23   1000001  212818000.0    212.8     14.1          for i, line in enumerate(iter(mm.readline, b""), chunk_start):
-    24   1000000  112410000.0    112.4      7.5              if i >= chunk_end:
-    25                                                           break
-    26                                           
-    27   1000000  205995000.0    206.0     13.7              location, temp_str = line.split(b";")
-    28   1000000  135838000.0    135.8      9.0              measurement = float(temp_str)
-    29                                           
-    30   1000000  138595000.0    138.6      9.2              if location not in result:
-    31       413      62000.0    150.1      0.0                  result[location] = [
-    32       413      33000.0     79.9      0.0                      measurement,
-    33       413      34000.0     82.3      0.0                      measurement,
-    34       413      35000.0     84.7      0.0                      measurement,
-    35       413      23000.0     55.7      0.0                      1,
-    36                                                           ]  # min, max, sum, count
-    37                                                       else:
-    38    999587  116873000.0    116.9      7.8                  _result = result[location]
-    39    999587  110167000.0    110.2      7.3                  if measurement < _result[0]:
-    40      3017     287000.0     95.1      0.0                      _result[0] = measurement
-    41    999587  135082000.0    135.1      9.0                  if measurement > _result[1]:
-    42      2966     273000.0     92.0      0.0                      _result[1] = measurement
-    43    999587  173177000.0    173.2     11.5                  _result[2] += measurement
-    44    999587  160411000.0    160.5     10.7                  _result[3] += 1
-    45                                           
-    46         1          0.0      0.0      0.0          return result
-    47                                           
-    48                                           
-    49                                                   # for station, data in result.items():
-    50                                                   #     return_dict[station] = data
-    51                                                       # if station in return_dict:
-    52                                                       #     existing_data = return_dict[station]
-    53                                                       #     return_dict[station] = (
-    54                                                       #         min(existing_data[0], data[0]),
-    55                                                       #         (existing_data[2] + data[2]) / (existing_data[3] + data[3]),
-    56                                                       #         max(existing_data[1], data[1])
-    57                                                       #     )
-    58                                                       # else:
-    59                                                       #     return_dict[station] = (data[0], data[2] / data[3], data[1])
+    36                                           @line_profiler.profile
+    37                                           def process_chunk(chunk_start: int, chunk_end: int) -> Dict[bytes, List[float]]:
+    38                                               """
+    39                                               Process a chunk of the file and compute min, max, sum, and count of measurements for each location.
+    40                                               Args:
+    41                                                   chunk_start (int): The start position of the chunk.
+    42                                                   chunk_end (int): The end position of the chunk.
+    43                                               Returns:
+    44                                                   Dict[bytes, List[float]]: A dictionary with location as key and a list of min, max, sum, and count as value.
+    45                                               """
+    46         1       1000.0   1000.0      0.0      chunk_size = chunk_end - chunk_start
+    47         1       4000.0   4000.0      0.0      print("Start:", chunk_start, " End:", chunk_end)
+    48         2      66000.0  33000.0      0.0      with open(file_path, "r+b") as file:
+    49         1      14000.0  14000.0      0.0          mm = mmap.mmap(file.fileno(), length=chunk_size, access=mmap.ACCESS_READ, offset=chunk_start)
+    50         1       1000.0   1000.0      0.0          if chunk_start != 0:
+    51                                                       next_line(0, mm)
+    52         1          0.0      0.0      0.0          result = dict()
+    53   1000001  165406000.0    165.4     12.2          for line in iter(mm.readline, b""):
+    54                                                       # if i >= chunk_end:
+    55                                                       #     break
+    56   1000000  214786000.0    214.8     15.9              location, temp_str = line.split(b";")
+    57   1000000  134545000.0    134.5      9.9              measurement = float(temp_str)
+    58   1000000  133048000.0    133.0      9.8              if location not in result:
+    59       413      87000.0    210.7      0.0                  result[location] = [measurement, measurement, measurement, 1]  # min, max, sum, count
+    60                                                       else:
+    61    999587  120684000.0    120.7      8.9                  _result = result[location]
+    62    999587  109299000.0    109.3      8.1                  if measurement < _result[0]:
+    63      3017     360000.0    119.3      0.0                      _result[0] = measurement
+    64    999587  140674000.0    140.7     10.4                  if measurement > _result[1]:
+    65      2966     319000.0    107.6      0.0                      _result[1] = measurement
+    66    999587  171273000.0    171.3     12.6                  _result[2] += measurement
+    67    999587  163878000.0    163.9     12.1                  _result[3] += 1
+    68         1      42000.0  42000.0      0.0          mm.close()
+    69         1       2000.0   2000.0      0.0          return result
 
-  1.51 seconds - /Users/kuldeepsingh/Work/github/1brc-pappu/py_1brc_2.py:12 - process_chunk
+  1.35 seconds - /Users/kuldeepsingh/Work/github/1brc/py_1brc_final.py:36 - process_chunk

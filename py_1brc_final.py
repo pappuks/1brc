@@ -2,8 +2,10 @@ import multiprocessing
 import os
 import mmap
 from typing import List, Dict, Tuple
+import struct
+
 # Path to the file containing measurements
-file_path = "../1brc/measurements.txt"
+file_path = "measurements.txt"
 def is_new_line(position: int, mm: mmap.mmap) -> bool:
     """
     Check if the given position in the memory-mapped file is the start of a new line.
@@ -18,6 +20,7 @@ def is_new_line(position: int, mm: mmap.mmap) -> bool:
     else:
         mm.seek(position - 1)
         return mm.read(1) == b"\n"
+    
 def next_line(position: int, mm: mmap.mmap) -> int:
     """
     Move to the next line in the memory-mapped file from the given position.
@@ -30,6 +33,7 @@ def next_line(position: int, mm: mmap.mmap) -> int:
     mm.seek(position)
     mm.readline()
     return mm.tell()
+
 def process_chunk(chunk_start: int, chunk_end: int) -> Dict[bytes, List[float]]:
     """
     Process a chunk of the file and compute min, max, sum, and count of measurements for each location.
@@ -46,9 +50,7 @@ def process_chunk(chunk_start: int, chunk_end: int) -> Dict[bytes, List[float]]:
         if chunk_start != 0:
             next_line(0, mm)
         result = dict()
-        for i, line in enumerate(iter(mm.readline, b""), chunk_start):
-            if i >= chunk_end:
-                break
+        for line in iter(mm.readline, b""):
             location, temp_str = line.split(b";")
             measurement = float(temp_str)
             if location not in result:
@@ -63,6 +65,7 @@ def process_chunk(chunk_start: int, chunk_end: int) -> Dict[bytes, List[float]]:
                 _result[3] += 1
         mm.close()
         return result
+    
 def identify_chunks(num_processes: int) -> List[Tuple[int, int]]:
     """
     Identify chunks of the file to be processed by different processes.
@@ -94,6 +97,7 @@ def identify_chunks(num_processes: int) -> List[Tuple[int, int]]:
             start += chunk_size
         mm.close()
         return chunk_results
+    
 def main() -> None:
     """Main function to process the file using multiple processes and print the results.
     """
@@ -121,5 +125,6 @@ def main() -> None:
             end=", ",
         )
     print("\b\b} ")
+    
 if __name__ == "__main__":
     main()
