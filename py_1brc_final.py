@@ -5,7 +5,7 @@ from typing import List, Dict, Tuple
 import struct
 
 # Path to the file containing measurements
-file_path = "measurements.txt"
+file_path = "../1brc/measurements.txt"
 def is_new_line(position: int, mm: mmap.mmap) -> bool:
     """
     Check if the given position in the memory-mapped file is the start of a new line.

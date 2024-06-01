@@ -13,7 +13,6 @@ def main() -> None:
     """
     perform_op()
     
-
 if __name__ == "__main__":
     main()
 

@@ -16,6 +16,34 @@ I am a sucker for optimization. So when I heard about 1BRC I naturally got intri
 - Take inspiration from existing python attempts
     - I wanted to look existing attempts of 1BRC in python and take inspiration from them and then build my optimizations on top of them
 
+## Performance (Macbook Pro M2 Pro 32GB RAM) (1 Billion Rows)
+
+### File cached in memory
+
+| Interpreter | File | Time (sec)|
+|-------------|------|-----------|
+| PyPy3 | py_1brc_final.py | 16.741 |
+| Python3 | py_1brc_final.py | 26.518 |
+| PyPy3 | py_1brc_mypyc.py | 16.726 |
+| Python3 | py_1brc_mypyc.py (process_chunk.py precompiled using mypyc) | 24.441 |
+| Python3 | calculateAverageDuckDB.py (from https://github.com/ifnesi/1brc) | 9.556 |
+| Python3 | calculateAverage.py (from https://github.com/ifnesi/1brc) | 36.303 |
+| PyPy3 | calculateAveragePyPy.py (from https://github.com/ifnesi/1brc) | 15.249 |
+| Python3 | calculateAveragePolars.py (from https://github.com/ifnesi/1brc) | 12.058 |
+
+### File not cached in memory (run `sudo purge` before each run)
+
+| Interpreter | File | Time (sec)|
+|-------------|------|-----------|
+| PyPy3 | py_1brc_final.py | 20.473 |
+| Python3 | py_1brc_final.py | 29.608 |
+| PyPy3 | py_1brc_mypyc.py | 20.333 |
+| Python3 | py_1brc_mypyc.py (process_chunk.py precompiled using mypyc) | 29.654 |
+| Python3 | calculateAverageDuckDB.py (from https://github.com/ifnesi/1brc) | 9.726 |
+| Python3 | calculateAverage.py (from https://github.com/ifnesi/1brc) | 53.255 |
+| PyPy3 | calculateAveragePyPy.py (from https://github.com/ifnesi/1brc) | 16.374 |
+| Python3 | calculateAveragePolars.py (from https://github.com/ifnesi/1brc) | 16.799 |
+
 ## Execution
 
 - I started by asking GPT to generate python code using below prompt:
@@ -45,7 +73,6 @@ I am a sucker for optimization. So when I heard about 1BRC I naturally got intri
             if city_info['max'] < data['max']
                 city_info['max'] = data['max']
         ``` 
-
 
 
 ## Learnings
