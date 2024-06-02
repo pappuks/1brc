@@ -1,6 +1,6 @@
 # 1BRC in Python
 
-I am a sucker for optimization. So when I heard about [1BRC](https://www.morling.dev/blog/one-billion-row-challenge/) I got intrigured and started experimenting with python implementations. **I achieved my goal and implemented the [fastest implementation](./py_1brc_final.py) running on CPython, without any external libraries .**
+I am a sucker for optimization. So when I heard about [1BRC](https://www.morling.dev/blog/one-billion-row-challenge/) I got intrigued and started experimenting with python implementations. **I achieved my goal and implemented the [fastest implementation](./py_1brc_final.py) running on CPython, without any external libraries .**
 
 For my implementation I followed these principles:
 - Python
