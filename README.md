@@ -66,6 +66,9 @@ For my implementation I followed these principles:
 | PyPy3 | calculateAveragePyPy.py (from https://github.com/ifnesi/1brc) | 16.374 |
 | PyPy3 | doug_booty4.py (from https://github.com/dougmercer-yt/1brc) | 11.162 |
 
+## Generation of measurements.txt
+Follow the instructions from [here](https://github.com/ifnesi/1brc?tab=readme-ov-file#creating-the-measurements-file-with-1b-rows)
+
 ## Execution
 
 - I started by asking GPT to generate python code using below prompt:
